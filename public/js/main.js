@@ -2284,57 +2284,60 @@ socket.on('avatar-success', ({ message})=>{
 });
 
 socket.on("frnd-typing",typerID=>{
-    if(!typingTimer[typerID]){
-        typingTimer[typerID] = {
-            timer: 0,
-            timing: ""
-        };
-    }
 
-    let typing, typing2;
-    
-    typing = document.getElementById(typerID).querySelector(".last-msg");
-    
-    typing.classList.add("typing");
-    typing.textContent="typing...";
-
-    if(convers.id == typerID){
-        typing2 = convers.parentElement.querySelector(".last-seen");
-        
-        typing2.classList.add("typing");
-        typing2.textContent="typing...";
-    }
-    
-
-    if(typingTimer[typerID].timing){
-        clearInterval(typingTimer[typerID].timing);
-    }
-
-
-
-    typingTimer[typerID].timing = setInterval( async ()=>{
-
-        typingTimer[typerID].timer++;
-
-
-        if(typingTimer[typerID].timer>=3){
-
-
-            typingTimer[typerID].timer=0;
-
-            if(typing2){
-                typing2.classList.remove("typing");
-                typing2.textContent=chatStatus[typerID];
-            }
-
-            typing.classList.remove("typing");
-            typing.textContent=lastMsgs[typerID];
-
-            clearInterval(typingTimer[typerID].timing);
-
-            typingTimer[typerID].timing=undefined;
+    if(document.getElementById(typerID)){
+        if(!typingTimer[typerID]){
+            typingTimer[typerID] = {
+                timer: 0,
+                timing: ""
+            };
         }
-    },1000);
+    
+        let typing, typing2;
+        
+        typing = document.getElementById(typerID).querySelector(".last-msg");
+        
+        typing.classList.add("typing");
+        typing.textContent="typing...";
+    
+        if(convers.id == typerID){
+            typing2 = convers.parentElement.querySelector(".last-seen");
+            
+            typing2.classList.add("typing");
+            typing2.textContent="typing...";
+        }
+        
+    
+        if(typingTimer[typerID].timing){
+            clearInterval(typingTimer[typerID].timing);
+        }
+    
+    
+    
+        typingTimer[typerID].timing = setInterval( async ()=>{
+    
+            typingTimer[typerID].timer++;
+    
+    
+            if(typingTimer[typerID].timer>=3){
+    
+    
+                typingTimer[typerID].timer=0;
+    
+                if(typing2){
+                    typing2.classList.remove("typing");
+                    typing2.textContent=chatStatus[typerID];
+                }
+    
+                typing.classList.remove("typing");
+                typing.textContent=lastMsgs[typerID];
+    
+                clearInterval(typingTimer[typerID].timing);
+    
+                typingTimer[typerID].timing=undefined;
+            }
+        },1000);
+    }
     
 });
 
