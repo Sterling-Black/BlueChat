@@ -105,11 +105,6 @@ app.use(bodyParser.urlencoded({
 
 app.use(session({
     secret: "ThisIsMyLittleSecret",
-    cookie:{
-        secure: true,
-        maxAge:60000
-           },
-    store: new RedisStore(),
     saveUninitialized: true,
     resave: false
 }));
