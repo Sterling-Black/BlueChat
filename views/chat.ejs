@@ -1,0 +1,214 @@
+<%- include("partials/header") %>
+<!-- Calling Signal -->
+<div class="calling">
+    <span class="name">
+        Name
+    </span> 
+    0:00
+</div>
+
+<script type="">
+    
+    const socket = io("/");
+
+    const {username, name, id} = <%- JSON.stringify(userInfo) %>;
+
+    const userChats = <%- JSON.stringify(userChats) %>;
+    const yourChats =[];
+
+    userChats.forEach((chat)=>{
+        // console.log(chat)
+        yourChats.push({
+            id: chat.chatId,
+            name: chat.chatName
+        })
+    })
+    
+    console.log(id);
+    
+    socket.emit("send-id",id);
+
+</script>
+
+<% const yourName = userInfo.name %>
+
+
+<!-- List of chats -->
+<section class="chat-list">
+        <div class="list-header">
+            <a href="#" class="logo"><%= yourName %></a>
+            <div>
+                <i class="uil uil-moon change-theme" id="theme-button"></i>
+                <i class="uil uil-setting set-btn"></i>
+            </div>
+        </div>
+        <div class="search-content">
+            <input type="search" placeholder="Search for a friend" class="chat-search">
+        </div>
+        <ul class="list-items chatts">
+            <% if(userChats){ %>
+                <% userChats.forEach((chat)=>{ const msgs = chat.messages%>
+                    <% const lastMsg = msgs[msgs.length-1] %>
+                    <% const type = lastMsg.type %>
+                    <% let value = type=="text"?lastMsg.value:lastMsg.type %>
+                    <% value = userInfo.id==lastMsg.sender?"you: "+value:value %>
+                    <li class="list-item" id="<%= chat.chatId %>">
+                        <img class="chat-img" src="image/user.png" alt="">
+                        <div class="chat-values">
+                            <p><span class="name"><%= chat.chatName %></span> <span class="time right"><%= lastMsg.time %></span></p>
+                            <p><span class="last-msg"><%= value %></span> <span class="num right"></span></p>
+                        </div>
+                    </li>
+                <% }) %>
+            <% } %>
+            
+            
+        </ul>
+
+</section>
+<!-- choosen chat -->
+<section class="chat-container">
+    <div class="container">
+        <div class="chat-header">
+            <div class="chat-profile">
+                <i class="uil uil-angle-left back-btn back-chat"></i>
+                <img class="chat-img img-prof" src="image/user.png" alt="">
+            </div>
+            <p class="prof-detail">
+                <span class="prof-name name"></span>
+                <span class="last-seen"></span>
+            </p>
+
+            <p>
+
+                <i class="uil uil-phone audio-call"></i>
+
+                <i class="uil uil-video video-call"></i>
+            </p>
+            
+        </div>
+        <div class="conversation">
+            
+            
+
+        </div>
+        <div class="input-msg">
+            <button class="emoji"><i class="uil uil-grin"></i></button>
+            <textarea type="text" class="type-msg" placeholder="Message"></textarea>
+            <div>
+                <div class="media">
+                    <input type="file" enctype="multipart/form-data" id="upload" onchange="uploadFile(event)" hidden/>
+                    <div class="upload" ><i class="uil uil-paperclip"></i></div>
+                    <button class="mic"><i class="uil uil-microphone"></i></button>
+                </div>
+                <button class="send-box">
+                    <!-- <i class="uil uil-message"></i> -->
+                    <i class="uil uil-message send"></i>
+                </button>
+            </div>
+            <div class="audio-recorder">
+                <span id="rec-time">0:00</span>
+                <div class="record">
+                    <i class="uil uil-trash-alt trash"></i>
+                    <div class="recording">
+                        Recording...
+                    </div>
+                    <i class="uil uil-message send-rec"></i>
+                </div>
+            </div>
+        </div>
+        <div class="covering">
+            Click on a chat to start a conversation. 😁
+        </div>
+    </div>
+</section>
+<!-- Chat Modal settings -->
+<section class="modal">
+    <div class="modal-content">
+        <i class="uil uil-times modal-close"></i>
+        <img src="image/user1.png" class="modal-img">
+        <h2 class="modal-inner modal-name"><i class="uil uil-edit"></i></h2>
+        <p class="email modal-inner"></p>
+        <p class="call modal-inner">
+
+            <i class="uil uil-phone audio-call"></i>
+
+            <i class="uil uil-video video-call"></i>
+        </p>
+    </div>
+</section>
+<!-- Settings Container -->
+<section class="settings">
+    <div class="my-profile">
+        <i class="uil uil-angle-left back-btn back-set"></i>
+        <input type="file" accept="image/*"  value="select" id="my-img" onchange="uploadAvatar(event)" hidden/>
+        <div class="my-img-container">
+            <img class="my-img" src="image/user.png" alt="">
+            <div class="camera">
+                <i class="fa-solid fa-camera" id="camera"></i>
+            </div>
+        </div>
+
+        <h1 class="name">
+            Stercy &nbsp; &nbsp; &nbsp;
+            <!-- <i class="uil uil-edit"></i> -->
+        </h1>
+    </div>
+    <ul class="list-items">
+        <input type="file" accept="image/*"  value="select" id="change-background" onchange="changeBG(event)" hidden/>
+        <li class="list-item set-item change-background">
+            <i class="uil uil-comment-message"></i>
+            <div class="set-values">
+                <span class="name">Chat background image</span>
+            </div>
+        </li>
+        <li class="list-item set-item ">
+            <i class="uil uil-share-alt"></i>
+            <div class="set-values">
+                <span class="name">invite a friend</span>
+            </div>
+        </li>
+        <li class="list-item set-item ">                
+            <i class="uil uil-question"></i>
+            <div class="set-values">
+                <span class="name">Help</span>
+            </div>
+        </li>
+	<a href="/logout">
+            <li class="list-item set-item">                
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <div class="set-values">
+                    <span class="name">Logout</span>
+                </div>
+            </li>
+        </a>
+
+    </ul>
+</section>
+<!-- Call Container -->
+<section class="call-container">
+    <div class="call-content">
+        <div class="call-area">
+            <i class="uil uil-times call-close"></i>
+            <div class="audio">
+                <img src="image/user1.png" class="call-img">
+                <h3 class="name">name</h3>
+            </div>
+            <!-- <div class="video">
+                <video src="" class=""></video>
+            </div> -->
+        </div>
+        <div class="call-icons">
+            <!-- <i class="uil uil-volume-mute"></i> -->
+            <i class="uil uil-volume call-btns"></i>
+            <i class="uil uil-phone-times call-btns"></i>
+            <!-- <i class="uil uil-microphone-slash"></i> -->
+            <i class="uil uil-microphone call-btns"></i>
+            <i class="uil uil-video video-call call-btns"></i>
+            <!-- <i class="uil uil-video-slash"></i> -->
+        </div>
+    </div>
+</section>
+<script src="js/main.js"></script>
+
+<%- include("partials/header") %>
