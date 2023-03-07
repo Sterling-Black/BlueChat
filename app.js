@@ -1,10 +1,11 @@
-// require("dotenv").config();
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 // const multer = require('multer');
 const session = require("express-session");
+const MemoryStore = require('memorystore')(session)
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
@@ -104,6 +105,10 @@ app.use(bodyParser.urlencoded({
 
 
 app.use(session({
+    cookie: { maxAge: 86400000 },
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
     secret: "ThisIsMyLittleSecret",
     saveUninitialized: true,
     resave: false
@@ -116,39 +121,12 @@ mongoose.set('strictQuery', false);
 
 mongoose.connect(process.env.MONGODB_URL,{useNewUrlParser: true});
 
-// const db = mongoose.connection;
-// db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-// db.once('open', () => {
-//   console.log('MongoDB connection successful');
-// });
-
-// var Grid = require('gridfs-stream');
-// Grid.mongo = mongoose.connection;
-// var gfs = new Grid("db", mongoose.mongo.db);
-
-// Define a storage engine for multer
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, 'uploads/');
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, `${Date.now()}_${file.originalname}`);
-//   },
-// });
-
-
-// // // Initialize multer with the storage engine
-// const upload = multer(multer({ dest: 'uploads/' }));
-
-
 const Message = mongoose.model("Message", messageSchema);
 
 
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
 
-// level 2 
-// userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ["password"]});
 
 const User =  mongoose.model("User",userSchema);
 
@@ -241,11 +219,19 @@ app.get("/auth/google/welcome",
 
 
 app.get("/login", (req,res)=>{
-    res.render("login");
+    if(req.isAuthenticated()){
+        res.redirect("/chat");
+    }else{
+        res.render("login");
+    }
 });
 
 app.get("/signup", (req,res)=>{
-    res.render("signup");
+    if(req.isAuthenticated()){
+        res.redirect("/chat");
+    }else{
+        res.render("signup");
+    }
 });
 
 app.get("/logout", (req,res)=>{
@@ -601,56 +587,79 @@ io.on("connection", (socket)=>{
 
     socket.on("find-avatar",(id)=>{
         const avatars = [];
-        // console.log("finding avatars");
+        console.log("finding avatars");
 
         
-
         User.find({ chats: { $elemMatch: { chatId: id } }  },(err,foundChats)=>{
 
-
-
-            foundChats.forEach(async (chat, index)=>{
-                try{
-
-                    const value = await readFile(chat.avatar);
-                    // const value = fs.readFileSync(chat.avatar);
-
-                    avatars.push({
-                        data: value,
-                        path: chat.avatar,
-                        id: chat._id.toString()
-                    });
-
-                    
-                }catch(error){
-
-                    console.log(error)
-                    
-                }
-                if(foundChats.length-1==index){
-
-                    User.findById(id,async (err,user)=>{
-                        if(err){
-                            console.log(err);
-                        }else{
-                            try{
-                                avatars.push({
-                                    data: await readFile(user.avatar),
-                                    path: user.avatar,
-                                    id: id
-                                });
-            
-                            }catch(error){
-                                console.log(error);
-                            }
+            if(foundChats.length==0){
+                User.findById(id,async (err,user)=>{
+                    if(err){
+                        console.log(err);
+                    }else{
+                        try{
+                            avatars.push({
+                                data: await readFile(user.avatar),
+                                path: user.avatar,
+                                id: id
+                            });
+        
+                        }catch(error){
+                            console.log(error);
                         }
-                        socket.emit("avatars",avatars);
-                    })
-                    
+                    }
+                    console.log(avatars);
+                    socket.emit("avatars",avatars);
+                })
+                console.log(err);
+            }else{
 
-                }
+                foundChats.forEach(async (chat, index)=>{
+                    try{
+    
+                        const value = await readFile(chat.avatar);
+                        // const value = fs.readFileSync(chat.avatar);
+    
+                        avatars.push({
+                            data: value,
+                            path: chat.avatar,
+                            id: chat._id.toString()
+                        });
+    
+                        
+                    }catch(error){
+    
+                        console.log(error)
+                        
+                    }
+                    if(foundChats.length-1==index){
+    
+                        User.findById(id,async (err,user)=>{
+                            if(err){
+                                console.log(err);
+                            }else{
+                                try{
+                                    avatars.push({
+                                        data: await readFile(user.avatar),
+                                        path: user.avatar,
+                                        id: id
+                                    });
+                
+                                }catch(error){
+                                    console.log(error);
+                                }
+                            }
+                            console.log(avatars);
+                            socket.emit("avatars",avatars);
+                        })
+                        
+    
+                    }
+    
+                })
+                
+            }
 
-            })
             
         })
     })

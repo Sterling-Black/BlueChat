@@ -1764,21 +1764,24 @@ socket.on("r-msg",(message,conversId)=>{
     const sender = message.sender;
 
     let typing, typing2;
+
+    if(document.getElementById(sender)){
+        typing = document.getElementById(sender).querySelector(".last-msg");
+        if(convers.id == sender){
+            typing2 = convers.parentElement.querySelector(".last-seen");
+        }
     
-    typing = document.getElementById(sender).querySelector(".last-msg");
-    if(convers.id == sender){
-        typing2 = convers.parentElement.querySelector(".last-seen");
+        clearInterval(typingTimer[sender].timing)
+        typingTimer[sender].timing=undefined;
+    
+        typing.classList.remove("typing");
+        typing.textContent=lastMsgs[sender];
+        if(typing2){
+            typing2.classList.remove("typing");
+            typing2.textContent=chatStatus[sender];
+        }
     }
-
-    clearInterval(typingTimer[sender].timing)
-    typingTimer[sender].timing=undefined;
-
-    typing.classList.remove("typing");
-    typing.textContent=lastMsgs[sender];
-    if(typing2){
-        typing2.classList.remove("typing");
-        typing2.textContent=chatStatus[sender];
-    }
+    
 
 
 
@@ -2232,10 +2235,14 @@ socket.on("avatars",avatars=>{
             const url = URL.createObjectURL(blob);
             avatarsUrl[id]=url;
             if(userId==id){
+                console.log(id);
                 document.querySelector(".my-img").src=url;
             }else{
-                // console.log(id);
+                console.log(id);
                 document.getElementById(id).querySelector(".chat-img").src=url;
+            }
+            if(id==convers.id){
+                document.querySelector(".chat-img.img-prof").src=url;
             }
             originalChats = chatList.innerHTML;
         }
@@ -2246,29 +2253,78 @@ socket.on("avatars",avatars=>{
 
 
 function uploadAvatar(event){
+    
     const avatar = event.target.files[0];
+    
+    document.querySelector('.workspace').innerHTML = `<img src="" alt="">`;
+
+
     if(avatar){
+        const ext = avatar.name.split(".")[avatar.name.split(".").length-1]
+
+        const type = avatar.type.split("/")[0];
+
         if(avatar.size<(1024*1024)*5){
-            //upload the avatar to server
-            const reader = new FileReader();
-            reader.readAsArrayBuffer(avatar);
 
-            const ext = avatar.name.split(".")[avatar.name.split(".").length-1]
+            image = URL.createObjectURL(avatar);
 
-            const type = avatar.type.split("/")[0];
+            // const workspace = document.querySelector(".workspace");
+            const image_workspace = document.querySelector(".workspace img")
+            const save = document.querySelector(".crop-container .save");
+            const cancle = document.querySelector(".crop-container .cancle");
+
+            image_workspace.src = image;
+
+            const options = {
+                dragMode: 'move',
+                preview: '.img-preview',
+                viewMode: 2,
+                modal: false,
+                background: false,
+                ready: function(){
+                    cropper.setAspectRatio(1)
+
+                    save.onclick = () => {
+                        cropper.getCroppedCanvas().toBlob((blob) => {
+                            const imgURL = window.URL.createObjectURL(blob)
+                            
+                            document.querySelector(".crop-container").style.visibility="hidden";
+                            document.querySelector(".crop-container").style.opacity=0;
+                            
+                            const reader = new FileReader([blob], avatar.name, { type: avatar.type });
+
+
+                            reader.readAsArrayBuffer(avatar);
+
+                            
+
+                            let path="";
+                            if(type=="image"){
+                                path = `./uploads/avatar/${id}.${ext}`
+                                reader.onload = () => {
+                                    
+                                    socket.emit("change-avatar", { path: path, data: reader.result ,id: id});
+
+                                    document.querySelector(".my-img").src = imgURL;
+
+                                };
+                            }else{
+                                alert("Select only an image");
+                            }
+                        })
+                    }
+
+                    cancle.onclick = ()=>{
+                        document.querySelector(".crop-container").style.visibility="hidden";
+                        document.querySelector(".crop-container").style.opacity=0;
+                    }
             
-
-            let path="";
-            if(type=="image"){
-                path = `./uploads/avatar/${id}.${ext}`
-                reader.onload = () => {
-                    // send the file data to the server
-                    socket.emit("change-avatar", { path: path, data: reader.result, id: id });
-                    image = URL.createObjectURL(avatar);
-                };
-            }else{
-                alert("Select only an image");
+                }
             }
+
+            const cropper = new Cropper(image_workspace, options)
+            document.querySelector(".crop-container").style.visibility="visible";
+            document.querySelector(".crop-container").style.opacity=1;
 
         }else{
             alert("Your profile picture should be less than 5MB")
@@ -2279,8 +2335,7 @@ function uploadAvatar(event){
 socket.on('avatar-success', ({ message})=>{
     console.log(message);
 
-    document.querySelector(".my-img").src = image;
-    alert("Profile picture uploaded sucessfully");
+    alert("Profile picture saved sucessfully");
 });
 
 socket.on("frnd-typing",typerID=>{

@@ -1,5 +1,6 @@
 <%- include("partials/header") %>
 
+
 <div class="welcome">
     <div class="animations">
         <div class="animation anim-on anim-off-0">
@@ -27,6 +28,24 @@
         </button>
     </div>
 </div>
+<div class="crop-container">
+    <div class="crop">
+        <div class="workspace">
+            <img src="" alt="">
+        </div>
+        <div class="buttons">
+            <button class="cancle">
+                Cancle
+            </button>
+            <button class="save">
+                Save
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
 <script type="">
     const id = '<%- id %>';
     const socket = io("/");
@@ -38,31 +57,101 @@
     });
 
     
-
+    
     function uploadAvatar(event){
+
+        // document.querySelector(".crop-container").style.visibility="visible";
+        // document.querySelector(".crop-container").style.opacity=1;
+        
         const avatar = event.target.files[0];
+        
+        document.querySelector('.workspace').innerHTML = `<img src="" alt="">`;
+    
+
+        console.log("image selected");
         if(avatar){
+            const ext = avatar.name.split(".")[avatar.name.split(".").length-1]
+
+            const type = avatar.type.split("/")[0];
+
             if(avatar.size<(1024*1024)*5){
-                //upload the avatar to server
-                const reader = new FileReader();
-                reader.readAsArrayBuffer(avatar);
-                
-                const ext = avatar.name.split(".")[avatar.name.split(".").length-1]
+                console.log("$");
 
-                const type = avatar.type.split("/")[0];
-                
+        
+                image = URL.createObjectURL(avatar);
 
-                let path="";
-                if(type=="image"){
-                    path = `./uploads/avatar/${id}.${ext}`
-                    reader.onload = () => {
-                        // send the file data to the server
-                        socket.emit("change-avatar", { path: path, data: reader.result ,id: id});
-                        image = URL.createObjectURL(avatar);
-                    };
-                }else{
-                    alert("Select only an image");
+                const workspace = document.querySelector(".workspace");
+                const image_workspace = document.querySelector(".workspace img")
+                const save = document.querySelector(".crop-container .save");
+                const cancle = document.querySelector(".crop-container .cancle");
+
+
+                image_workspace.src = image;
+
+                console.log(image_workspace,image);
+
+
+
+                const options = {
+                    dragMode: 'move',
+                    preview: '.img-preview',
+                    viewMode: 2,
+                    modal: false,
+                    background: false,
+                    ready: function(){
+                        cropper.setAspectRatio(1)
+
+                        save.onclick = () => {
+                            cropper.getCroppedCanvas().toBlob((blob) => {
+                                const imgURL = window.URL.createObjectURL(blob)
+                                
+                                document.querySelector(".crop-container").style.visibility="hidden";
+                                document.querySelector(".crop-container").style.opacity=0;
+                                
+                                const reader = new FileReader([blob], avatar.name, { type: avatar.type });
+
+
+                                reader.readAsArrayBuffer(avatar);
+
+                                
+
+                                let path="";
+                                if(type=="image"){
+                                    path = `./uploads/avatar/${id}.${ext}`
+                                    reader.onload = () => {
+                                        next.innerHTML = "Next <i class='uil uil-arrow-right'></i>";
+
+                                        // send the file data to the server
+                                        socket.emit("change-avatar", { path: path, data: reader.result ,id: id});
+
+                                        document.querySelector(".my-img").src = imgURL;
+
+                                    };
+                                }else{
+                                    alert("Select only an image");
+                                }
+                            })
+                        }
+
+                        cancle.onclick = ()=>{
+                            document.querySelector(".crop-container").style.visibility="hidden";
+                            document.querySelector(".crop-container").style.opacity=0;
+                        }
+                
+                    }
                 }
+
+                const cropper = new Cropper(image_workspace, options)
+
+                console.log("ready",cropper);
+
+                document.querySelector(".crop-container").style.visibility="visible";
+                document.querySelector(".crop-container").style.opacity=1;
+
+
+
+                //upload the avatar to server
+                
 
             }else{
                 alert("Your profile picture should be less than 5MB")
@@ -74,12 +163,12 @@
         console.log(message);
 
         //display profile
-        document.querySelector(".my-img").src = image;
-        if(!ready){
-            next.innerHTML = "Next <i class='uil uil-arrow-right'></i>";
-        }else{
-            alert("Profile picture uploaded sucessfully");
-        }
+        // document.querySelector(".my-img").src = image;
+        // if(!ready){
+        //     next.innerHTML = "Next <i class='uil uil-arrow-right'></i>";
+        // }else{
+        //     alert("Profile picture uploaded sucessfully");
+        // }
 
     });
 
@@ -117,5 +206,6 @@
         
     });
 </script>
+
 
 <%- include("partials/footer") %>
