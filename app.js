@@ -105,8 +105,13 @@ app.use(bodyParser.urlencoded({
 
 app.use(session({
     secret: "ThisIsMyLittleSecret",
-    resave: false,
-    saveUninitialized: true
+    cookie:{
+        secure: true,
+        maxAge:60000
+           },
+    store: new RedisStore(),
+    saveUninitialized: true,
+    resave: false
 }));
   
 app.use(passport.initialize());
